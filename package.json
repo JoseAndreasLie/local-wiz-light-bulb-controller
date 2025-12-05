@@ -1,0 +1,16 @@
+{
+  "name": "wiz-local-server",
+  "version": "1.0.0",
+  "description": "wiz-light-controller",
+  "license": "MIT",
+  "author": "Jose Andreas Lie",
+  "type": "commonjs",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "dgram": "^1.0.1",
+    "express": "^5.2.1"
+  }
+}

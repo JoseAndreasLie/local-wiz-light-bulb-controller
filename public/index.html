@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wiz Light Control</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+        
+        .control-group {
+            margin-bottom: 30px;
+        }
+        
+        .control-group label {
+            display: block;
+            margin-bottom: 10px;
+            color: #555;
+            font-weight: 600;
+        }
+        
+        .power-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        button {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .btn-on {
+            background: #10b981;
+            color: white;
+        }
+        
+        .btn-off {
+            background: #ef4444;
+            color: white;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+        }
+        
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: none;
+        }
+        
+        input[type="color"] {
+            width: 100%;
+            height: 60px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+        
+        .value-display {
+            text-align: center;
+            margin-top: 10px;
+            color: #666;
+            font-weight: 600;
+        }
+        
+        .status {
+            text-align: center;
+            padding: 10px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+        
+        .status.success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .scenes {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .scene-btn {
+            padding: 10px;
+            font-size: 14px;
+            background: #f3f4f6;
+            color: #333;
+        }
+        
+        .scene-btn:hover {
+            background: #e5e7eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💡 Wiz Light Control</h1>
+        
+        <div class="control-group">
+            <label>Power</label>
+            <div class="power-buttons">
+                <button class="btn-on" onclick="setPower(true)">Turn ON</button>
+                <button class="btn-off" onclick="setPower(false)">Turn OFF</button>
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <label>Brightness</label>
+            <input type="range" id="brightness" min="10" max="100" value="100" oninput="updateBrightness(this.value)">
+            <div class="value-display" id="brightnessValue">100%</div>
+        </div>
+        
+        <div class="control-group">
+            <label>Color</label>
+            <input type="color" id="colorPicker" value="#ffffff" onchange="setColor(this.value)">
+        </div>
+        
+        <div class="control-group">
+            <label>Color Temperature</label>
+            <input type="range" id="temperature" min="2200" max="6500" value="4000" oninput="updateTemperature(this.value)">
+            <div class="value-display" id="tempValue">4000K</div>
+        </div>
+        
+        <div class="control-group">
+            <label>Scenes</label>
+            <div class="scenes">
+                <button class="scene-btn" onclick="setScene(6)">🌅 Sunset</button>
+                <button class="scene-btn" onclick="setScene(9)">🎉 Party</button>
+                <button class="scene-btn" onclick="setScene(11)">🔥 Fireplace</button>
+                <button class="scene-btn" onclick="setScene(14)">🌊 Ocean</button>
+                <button class="scene-btn" onclick="setScene(15)">🌈 Romance</button>
+                <button class="scene-btn" onclick="setScene(27)">📚 Focus</button>
+            </div>
+        </div>
+        
+        <div id="status"></div>
+    </div>
+    
+    <script>
+        const API_URL = 'http://localhost:3000/api';
+        
+        function showStatus(message, isError = false) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${isError ? 'error' : 'success'}`;
+            setTimeout(() => status.textContent = '', 3000);
+        }
+        
+        async function setPower(state) {
+            try {
+                const response = await fetch(`${API_URL}/power`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ state })
+                });
+                const data = await response.json();
+                showStatus(`Light turned ${state ? 'ON' : 'OFF'}`);
+            } catch (error) {
+                showStatus('Error: ' + error.message, true);
+            }
+        }
+        
+        let brightnessTimeout;
+        function updateBrightness(value) {
+            document.getElementById('brightnessValue').textContent = value + '%';
+            clearTimeout(brightnessTimeout);
+            brightnessTimeout = setTimeout(() => setBrightness(value), 300);
+        }
+        
+        async function setBrightness(value) {
+            try {
+                const response = await fetch(`${API_URL}/brightness`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ brightness: parseInt(value) })
+                });
+                const data = await response.json();
+                showStatus(`Brightness set to ${value}%`);
+            } catch (error) {
+                showStatus('Error: ' + error.message, true);
+            }
+        }
+        
+        async function setColor(hexColor) {
+            const r = parseInt(hexColor.substr(1, 2), 16);
+            const g = parseInt(hexColor.substr(3, 2), 16);
+            const b = parseInt(hexColor.substr(5, 2), 16);
+            
+            try {
+                const response = await fetch(`${API_URL}/color`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ r, g, b })
+                });
+                const data = await response.json();
+                showStatus('Color changed');
+            } catch (error) {
+                showStatus('Error: ' + error.message, true);
+            }
+        }
+        
+        let tempTimeout;
+        function updateTemperature(value) {
+            document.getElementById('tempValue').textContent = value + 'K';
+            clearTimeout(tempTimeout);
+            tempTimeout = setTimeout(() => setTemperature(value), 300);
+        }
+        
+        async function setTemperature(value) {
+            try {
+                const response = await fetch(`${API_URL}/temperature`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ temp: parseInt(value) })
+                });
+                const data = await response.json();
+                showStatus(`Temperature set to ${value}K`);
+            } catch (error) {
+                showStatus('Error: ' + error.message, true);
+            }
+        }
+        
+        async function setScene(sceneId) {
+            try {
+                const response = await fetch(`${API_URL}/scene`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sceneId })
+                });
+                const data = await response.json();
+                showStatus('Scene activated');
+            } catch (error) {
+                showStatus('Error: ' + error.message, true);
+            }
+        }
+    </script>
+</body>
+</html>
